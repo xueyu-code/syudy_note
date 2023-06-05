@@ -55,7 +55,7 @@ dab
 - {mark}表示随便什么字符，起到一个标识作用，看个人习惯
 - gg跳到文章开头，G跳到文章末尾
 - 设置好mark之后，比如设置mark为1那么下次输入`1就能跳转
-## 复制粘贴翻页跳转
+## 常用的操作
 - y 复制
 - p 粘贴
 ![](img/vim翻页操作.png)
@@ -63,7 +63,22 @@ dab
 ```sh
 52gg #普通模式下输入直接跳转到第52行
 ```
-
+*关闭vim界面的所有窗口*
+```sh
+:qa
+```
+按下F3打开当前目录下的文件列表
+## 常用的插件相关问题
+### ctags
+*切换打开关闭函数和变量列表的命令*
+```sh
+:TlistToggle
+```
+按下*ctrl+ww*在vim中多个串口间进行切换，在ctags的函数列表侧边栏也可以进行查找操作，按下回车跳转到函数定义处。
+*查看变量定义*
+移动光标到指定变量按下gd
+*查找并定位变量出现的位置*
+光标选中指定文本，按下F6，
 ## 查找替换（重要）
 ![](img/vim查找替换操作.png)
 *如果你输入想查找的字符之后，发现没有高亮，请输入:set hls来设置一下*
@@ -448,3 +463,20 @@ let g:miniBufExplMapWindowNavArrows = 1
 let g:miniBufExplMapCTabSwitchBufs = 1 
 let g:miniBufExplModSelTarget = 1
 ```
+## vim遇到的问题记录
+### 打开文件显示filetype unknown
+报错信息
+```sh
+filetype unknown
+Press ENTER or type command to continue
+```
+*解决方法*
+在.vimrc中将下面这条指令
+```vim
+set syntax=on
+```
+改成
+```vim
+syntax on
+```
+
