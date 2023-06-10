@@ -996,9 +996,9 @@ char str[32] = {};
     gets(str);    printf("%s\n", str);
     return 0;
 ```
-### C语言字符串的其他形式
+### C语言定义字符串的其他形式
 有时候这种定义字符串的形式上不灵活，由于数组本质上就是利用指针开辟的内存空间，所以还有一些变体来完成。
-**直接利用指针**
+**1 直接利用指针**
 ```c
 #include <stdio.h>
 #include <strings.h>
@@ -1009,6 +1009,56 @@ int main(void)
         printf("%s\n", p);
 }
 ```
+*现象*
+```sh
+hello world
+```
+**但是这种写法也是有弊端的，你初始化之后是不能再对它进行修改的（进行修改直接段错误），因为编译器会把“hello world”这个字符串分配在代码段，也就是说这个是常量字符串，不是变量字符串**
+_注意下面这种情况_
+尽管不能对这个字符串修改，但是可以再定义一个指针（**名字可以一样**）
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+char *p="hello world";
+int main(void)
+{
+    printf("%s\n", p);
+    char *p="竟然真的能用";
+    printf("%s\n", p);
+}
+```
+现象如下图所示
+![](img/字符串同名指针.png)
+**2 利用数组指针**
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    char *test[]={"hello","world"};
+    //为了方便理解可以写为下面这样，效果一样
+    //char *(test[])={"test","one"};
+    printf("%s\n",test[1]);
+
+}//上述代码执行之后会输出world字符串
+```
+也能类似二维数组的形式进行访问单个字符
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    char *test[]={"hello","world"};
+    printf("%c\n",*(test[0]+1));
+
+}//上述代码执行后输出e这一个字符
+```
+**分析**：test[]是一个指针数组，里面有两个元素，每个元素都指向一个字符串常量，和之前说的一样，此处初始化之后也是不能修改字符串内容
+#### 字符串和字符串数组的区别
+![](img/字符数组和字符串的本质差异.png)
 ### 字符数组的输出
 ```c
 1. prinf("%s\n", str);
