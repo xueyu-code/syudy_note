@@ -926,6 +926,25 @@ int main()
 ```
 不行，直接报错，log显示gcc不认为num是个常量
 ![](img/const在gcc的缺陷.png)
+*但是在定义数组的同时不进行初始化就不会报错*
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    const int num=5;
+    int a[num];
+    for (size_t i = 0; i < num; i++)
+    {
+        scanf("%d",&a[i]);
+    }
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
 **利用宏定义也可以代替数组元素个数**
 ```c
 #include <stdio.h>
