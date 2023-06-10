@@ -794,6 +794,166 @@ continue：结束本次循环，继续下一次循环
 - 数组名要符合标识符命名规则
 - 在*同一个函数*中，数组名不要与变量名相同
 - 下标从0开始，到n-1结束
+### 关于定义数组的一些探讨
+*高版本gcc已经支持int a[];这种形式来定义变长数组，低版本gcc也可以通过int a[0];这种形式来完成变长数组使用*，**但是切记定义数组还是不能在方框里面填写变量。**
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    int num=5;
+    int a[num]={0};
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
+报错信息如下
+```sh
+test.c: In function ‘main’:
+test.c:7:5: error: variable-sized object may not be initialized
+     int a[num]={0};
+     ^
+test.c:7:17: warning: excess elements in array initializer
+     int a[num]={0};
+                 ^
+test.c:7:17: note: (near initialization for ‘a’)
+```
+**但是如果你换一种写法，你就可以骗过编译器**
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    int num=5;
+    int a[num];
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
+![](img/定义数组探讨1.png)
+此时不会报错不会警告，由于没有初始化，所以输出的是脏数据。下一步做出大胆假设此时已经可以正常访问，但是初始化数组的方式得换一种思路
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    int num=5;
+    int a[num];
+    memset(a,0,num*sizeof(int));
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
+**成功运行，效果如下**
+```sh
+hq@Ubuntu:/mnt/hgfs/share_rv1126$ gcc test.c 
+test.c: In function ‘main’:
+test.c:8:5: warning: implicit declaration of function ‘memset’ [-Wimplicit-function-declaration]
+     memset(a,0,num*sizeof(int));
+     ^
+test.c:8:5: warning: incompatible implicit declaration of built-in function ‘memset’
+test.c:8:5: note: include ‘<string.h>’ or provide a declaration of ‘memset’
+hq@Ubuntu:/mnt/hgfs/share_rv1126$ ./a.out 
+0
+0
+0
+0
+0
+```
+*用循环单独赋值也是可以通过*
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    int num=5;
+    int a[num];
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("请输入数字\n");
+        scanf("%d",&a[i]);
+    }
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
+*成功运行，效果如下*
+```sh
+hq@Ubuntu:/mnt/hgfs/share_rv1126$ gcc test.c 
+hq@Ubuntu:/mnt/hgfs/share_rv1126$ ./a.out 
+请输入数字
+1
+请输入数字
+2
+请输入数字
+3
+请输入数字
+4
+请输入数字
+5
+1
+2
+3
+4
+5
+```
+**尝试利用const**
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+int main()
+{
+    const int num=5;
+    int a[num]={0};
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
+不行，直接报错，log显示gcc不认为num是个常量
+![](img/const在gcc的缺陷.png)
+**利用宏定义也可以代替数组元素个数**
+```c
+#include <stdio.h>
+#include <strings.h>
+#include <stdlib.h>
+#define num 5
+int main()
+{
+    int a[num]={};
+    for (size_t i = 0; i < num; i++)
+    {
+        printf("%d\n",a[i]);
+    }
+}
+```
+效果如下
+```sh
+hq@Ubuntu:/mnt/hgfs/share_rv1126$ gcc test.c 
+hq@Ubuntu:/mnt/hgfs/share_rv1126$ ./a.out 
+0
+0
+0
+0
+0
+```
+
+
+
 ## 数组的分类
 ### 一维数组
 概念：只有一个下标的数组
