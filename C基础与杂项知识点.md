@@ -503,11 +503,24 @@ int ret = printf("%d\n", d);
 printf("%d\n", ret); // 2    
 ```
 ## 按格式输入
+```c
 int scanf(const char *format, ...);
+```
 功能：按格式从终端输入
 参数：同 printf // 你用来输入的时候后面放的是变量的地址
 返回值：正确输入数据的个数
 当第一个数输入的格式不正确时，会直接返回 0
+**一定要按照双引号内规定的格式进行输入，否则无法正常进行变量赋值，就比如下面这样**
+```c
+int main()
+{
+    float a,b;
+    scanf("x=%f,y=%f",&a,&b);//必须按照格式输入
+    printf("x=%f,y=%f\n",a,b);
+}
+```
+![](img/scanf注意事项.png)
+**注意看执行的效果，不同的输入方式，结果不同**
 ## 垃圾字符回收(重点)
 **1. 通过空格回收，这种用的也多**
 ```c
@@ -1114,6 +1127,42 @@ int main()
 ///////////////////////////////////////////////////////////////
 }
 ```
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+int main()
+{
+    int a[2][3]={{1,2,3},{7,8,9}};
+    int *p;
+    printf("第一个元素是%d\n",a[0][0]);
+    printf("第二行第一个元素是%d\n",*(*(a+1)));
+    printf("第二行第一个元素是%d\n",*(&a[0][0]+3));
+    printf("第二行第一个元素是%d\n",*(a[0]+3));
+    printf("第二行第一个元素是%d\n",*((a[0]+3)));
+    printf("第二行第一个元素是%d\n",*(*(&a[0]+1))+0);
+
+    printf("第二行第二个元素是%d\n",*(*(&a[0]+1))+1);
+}
+```
+![](img/二维数组指针访问.png)
+**下面是个人的理解（老师说这么理解可以）**
+
+    个人理解：二维数组的数组名a表示首元素的地址，a等同于&a[0]
+    a[0]是表示第一行，同时也是一个数组名，表示第一行的地址也表示第一行第一个元素
+    的地址，a[0]=&a[0][0],综上所述a等同于&&a[0][0]
+
+    目的：利用a[0]偏移一行数据元素的长度来访问第二行的数据，
+    &a[0]相当于指向第一行的指针，然后加1，相当于指向第二行的指针，然后
+    对这个指向第二行的地址取*，此时用户指向的不是整个第二行数组，而是指向第二行
+    的第一个元素，此时再偏移，再进行*就和一维数组一样了
+
+    根据《C和指针》中的理论，当a前面有&操作符时，
+    编译器将会把a对应符号表中的地址看作指向数组的指针，
+    此时sizeof（a）返回整个数组的长度
+
+    a+1:数组元素的移动：首地址 + 一个数组元素的大小 
+    &a+1: 其实加的整个数组大小：首地址 + 数组长度*数组元素大小 
 ## 清零函数
 这类函数可以批量操作数组元素
 ### bzero
@@ -1393,6 +1442,7 @@ char str[] = "hello";
 3. sizeof 计算包含 \0，strlen计算不包含 \0 
     sizeof计算的前提是 元素个数省略的情况下，sizeof比strlen大1
 ```
+*sizeof当你数组省略元素个数的时候，sizeof会多算一个反斜杠0使长度加1，当元素个数不省略的时候，和strlen一样不会多算长度*（**此处有些不严谨需要在测试一下**）
 ### 判断字符数组长度问题
 尽管可以借助strlen函数来计算有效字符串的长度，但是由于C语言的转义字符机制，导致
 经常混淆错误。
@@ -1463,12 +1513,6 @@ int main()
 **如果有n个数进行比较，则需要比较n-1轮 ，每轮交换的次数从n-1开始依次递减**
 # 选择排序
 n个数，先找到最小值的下标暂存选择出最小的值与第一个值交换
-**排序过程：**
-1.首先通过 n-1 次比较，从 n 个数中找到最小的，将他与第一个数交换， 第一趟选择排序，结果最小值被安置在了第一个元素位置上
-
-2.在通过 n-2 比较，从剩余的 n-1 个数中找出数据最小的，将它与第二个数交换
-
-3.重复上述过程，共经过 n-1 趟排序后，排序结束二维数组
 ```c
 #include <stdio.h>
 #include <strings.h>
@@ -1526,9 +1570,1202 @@ int a = 5;
     char *q = &b;
     printf("%p\n", p);
     printf("%p\n", q);
-
+```
+## 给普通指针初始化
+指针变量在使用时不仅要定义，最好也初始化
+**未初始化的指针变量不能随便使用，会产生野指针**
+```c
+1. 将普通变量的地址赋值给指针变量
+    int a = 10;
+    1）int *p = &a; // 定义的同时赋值
+    
+    2) int *p = NULL;
+        p = &a; // 先定义后赋值
+        
+        int a = 10;
+        int *p = NULL;
+        p = &a;
+        printf("%d %d\n", a, *p); // 10 10
+        printf("%p %p\n", &a, p); // 打印的都是变量a地址
+        *p = 3;
+        printf("%d %d\n", a, *p); // 3 3
+        printf("%p %p\n", &a, p); // 打印的地址没有发生改变
+    
+    2. 将数组的首地址赋值给指针变量
+        char s[10] = "hello";
+        char *p = s; //指针指向数组的首地址，即指向字符 'h'
+        
+    3. 将指针变量里面保存的地址赋值给另一个指针变量
+        float a = 1.3;
+        float *p = &a;
+        float *q = p;
+```
+## 指针的运算
+### 算数运算
+**指向不同类型的数组指针间的算数运算没有意义，指向不同区域的指针算数运算也没有意义，所以一般用在同一个数组间的运算**
+```c
+char s[32] = "hello";
+    char *p = s;
+    p++; // 它现在指向了 e 
 ```
 
+p++; // 指针向高地址方向移动一个数据单位，指针指向发生变化
+p--; // 指针向低地址方向移动一个数据单位，指针指向发生变化
+*因为加加减减运算符最后会进行赋值运算，等价于p++=>p=p+1*
+**特别注意如果不要对数组名进行加加减减运算**
+```c
+int main()
+{
+    int a[10]={};
+    for (size_t i = 0; i < 10;i++)
+    {
+        printf("%d",a++);
+    }
+}//上述代码会直接报错
+//因为数组名是个地址常量，是不能对他进行修改的
+```
+*可以通过下面这种方式来用*
+```c
+int main()
+{
+    int a[10]={};
+    for (size_t i = 0; i < 10;i++)
+    {
+        printf("%d",*(a+i));
+    } 
+}
+```
+
+```c
+int *p; p++; // 移动 4 字节
+double *p; p++ // 移动 8 字节
+//每加1就是移动一个数据元素大小的长度
+```
+p+n：访问高地址方向第 n 个数据的地址，指针指向不发生变化
+p-n：访问低地址方向第 n 个数据的地址，指针指向不发生变化
+
+// p 到 p+5 之间相隔了多少个地址
+sizeof(数据类型) * n = 偏移了多少字节(地址)
+```c
+int arr[32] = {1,2,3,4};
+    int *p = arr;
+    int num;
+    p = p+3;
+    int *q = arr;
+    printf("%d\n", p-q);
+```
+
+两个地址之间的差 = 两个地址之间相差元素的个数
+p-q = 之间相差元素的个数
+```c
+    int m = 100;
+    double n = 200;
+    int *p1 = NULL, *p2 = NULL;
+    double *p1 = NULL, *p2 = NULL;
+
+    p1 = &n;
+    p2 = p1 + 2;
+    printf("p1=%p p2=%p\n", p1, p2);
+    printf("p2-p1=%d\n", p2-p1); // 2
+```
+### 关系运算
+指针之间关系运算比较的是它指向地址的高低
+__指向高地址的指针大于指向低地址的指针__
+```c
+int main()
+{
+    char s[10] = "hello";
+    char *p1 = &s[1];
+    char *p2 = &s[3];
+    if(p1 < p2)
+    {
+        printf("p2大\n");
+    }
+    else
+    {
+        printf("p1大\n");
+    }
+}
+```
+**指向不同类型的数组指针间的关系运算没有意义，指向不同区域的指针关系运算也没有意义，所以一般用在同一个数组间比较**
+## 指针的大小
+**操作系统为32位，这个32位是什么含义？**
+    表示单次运算可以处理最大数据的位数
+**总结**：在32位操作系统中，无论是什么类型的指针，哪怕这个指针是指向NULL。他的大小也是**4字节**，可以由8位（4*8=32）16进制数表示。
+在64位操作系统中，指针大小为**8字节**，可以有16位（4*16=64）16进制数表示。
+**重要知识点**
+- 32位操作系统，指针大小为4字节，64位操作系统，指针大小为8字节
+- 内存地址是固定的，但是变量的地址不固定（栈区变量随机分配）
+- 指针类型是根据指针指向空间内的数据类型来确定的
+## 变量在内存中如何分配（重要）
+![](img/变量分配图.png)
+## 段错误
+报错信息如下所示就是指发生段错误
+```sh
+Segmentation fault (core dumped)
+```
+*产生段错误之后可以利用生成的core dumped(核心转储文件)来进行问题复现和调试*
+### 导致段错误的原因
+- 野指针导致访问非法地址
+- 直接访问非法地址(详情见下面的示例)
+- 内存泄漏：对非法空间进行赋值
+- 数组越界
+- 按字符串类型输出时没有传入地址(详情见下面的示例)
+
+**直接访问非法地址**
+下面只是举个例子，有机会查查那些内存地址已经默认是非法地址了
+```c
+int main()
+{
+    int *p=NULL;
+    printf("%d\n",*p);
+}//上述代码可以通过编译，但是执行后直接显示段错误
+//NULL空指针所指向的内存0地址，不是能随便访问的，对普通的应用程序来说
+//内存0地址就是一个非法地址
+```
+**按字符串类型输出时没有传入地址**
+```c
+int main()
+{
+    char a[10]="fuck test";
+    printf("%s\n",a[5]);//此处没有传入地址 
+    //直接报错 段错误
+}
+```
+*但是这样写，传入地址就正常了*
+```c
+int main()
+{
+    char a[10]="fuck test";
+    printf("%s\n",&a[5]);
+//上述代码执行后输出test
+}
+```
+## 指针修饰
+### const常量化
+```c
+1. const 常量化
+    1）修饰普通变量
+        const int a = 10;
+        // const int a = 10;
+        int const a = 10;
+        // a=30; // 错
+        // a++;
+        int *p = &a; // 这样可以，因为 const 没有修饰 *p，修饰的是 a
+        *p = 20;
+        // float b = (float)a;
+        printf("%d\n", a);
+        // printf("%f\n", b);
+    2）修饰指针指向的内容
+    也就是修饰 *p，此时指针指向的内容不能改变，但是指向可以改变
+    const int *p;
+    int const *p;
+
+    int a = 10;
+    int b = 30;
+    int const *p = &a;
+    const int *q = &b;
+    printf("%d %d\n", a, b);
+    // *p = 1; // *p 只读不可以被更改
+    // *q = 3; // *q 只读不可以被更改
+    p = q;
+    printf("%d %d\n", *p, *q);
+
+    3）修饰指针指向
+        int *const p;
+        此时 const 修饰 p，指针指向不能被改变，但是指向的内容可以被更改
+        
+        int a = 10;
+        int b = 20;
+        int *const p = &a;
+        int *const q = &b;
+        printf("%d\n", *p);
+        *p = 20;
+        printf("%d\n", *p);
+        p = q;
+2. void(这部分讲解我觉得没啥用)
+    void a; // 不允许修饰变量
+    int a = 100;
+    void *p = &a;  // p 是一个任意类型的指针
+    int *q = (int *)p;
+    printf("%d %d\n", *(int *)p, *q);
+    
+    使用场景：函数参数或返回值
+    注意通过 void 类型指针进行取内容时，需要对地址进行强转
+    
+    void *p = NULL;
+    int a = 10;
+    (int *)p =
+         &a; // 错误 (int *)p 为右值  
+    printf("%d\n", *(int *)p);
+    
+    现用现转，或者转换之后赋值给另外一个变量然后应用另外一个变量
+```
+*重点记忆*
+- int const *p p所指向的空间是常量，里面的内容不能被修改
+- int * const p p变量本身不能被修改（p初始化完成后不能被指向别的变量），p所指向的空间内容可以被修改
+- int const *const p; 都不能被修改
+## 指针和数组
+直接访问：按变量的地址存取变量的值(通过数组名访问)
+间接访问：通过存放变量地址的变量去访问变量(通过指针访问)
+### 指针和一维数组
+```c
+nt a[5] = {1,2,3,4,5};
+    int *p = a;
+    printf("%p %p %p\n", a, a+1, a+2);
+    printf("%p %p %p\n", p, p+1, p+2);
+    printf("%d %d\n", a[1], *(a+1));
+```
+![](img/指针和一维数组间接访问.png)
+```c
+a和p本质上不同，a是地址常量，p是变量，a不能执行 ++ 操作，但是 p 可以
+
+访问数组元素 a[i] 的值；
+直接访问：a[i]  *(a+i)
+间接访问：p[i]  *(p+1)
+
+访问数组元素 a[i] 的地址；
+直接访问：&a[i]    a+i
+间接访问：&p[i]    p+i
+```
+**重要知识点**
+```c
+int a[3] = {1,2,3};
+int *p = a;
+printf("%d\n", *p++); // 1
+printf("%d\n", *p++); // 2
+printf("%d\n", *a++); // 报错
+
+运算方法：
+    1）++ 和 * 都是单目运算符，优先级相同
+    2）单目运算符从右向左运算
+    
+    *(p++) // 1    先取值，再移动
+    (*p)++ // 同上    但是第一个实际上变成了2
+
+    ++*p // 打印出来 2， 1自加完之后的值
+    ++(*p) // 同上
+
+    *++p // 先移动再取值，2
+    *(++p) // 同上
+```
+### 指针和二维数组(重要)
+```c
+int a[2][3] = {1,2,3,4,5,6}; // a：第一行首地址，a+1：第二行的首地址
+
+在 a 前面加 *，表示将行地址降级成为列地址
+
+*a：第一行第一列的地址
+*a+1：第一行第二列的地址
+*(a+1)：第二行第一列的地址
+*(a+1)+1：第二行第二列的地址
+
+访问数组元素地址(a[i][j]的地址)
+printf("%p\n",&a[i][j]);
+printf("%p\n",*(a+i)+j);
+printf("%p\n",a[i]+j);
+
+访问数组元素值：
+printf("%d\n", a[i][j]);
+printf("%d\n", *(*(a+i)+j));
+printf("%d\n", *(a[i]+j));
+```
+![](img/指针和二维数组.png)
+## 数组指针
+*定义*：本质上是指针，指向的是数组(又称为行指针)
+```c
+定义格式：存储类型    数据类型   (* 指针变量名)[列数] 
+int a[2][3] = {1,2,3,4,5,6};
+    int (*p)[3] = a;
+    for (size_t i = 0; i < 2; i++)
+    {
+        for (size_t j = 0; j < 3; j++)
+        {
+            printf("%p\n", *(p+i)+j);
+            printf("%p\n", *(a+i)+j);
+        }
+        
+    }
+```
+p可以代替a进行元素访问，但是本质不同
+**p是一个指针变量，而a代表一个地址常量**
+
+```c
+访问数组元素地址（a[i][i]的地址）
+*(p+i)+j)
+p[i]+j
+访问数组元素值：
+*(*(p+i)+j)
+*(p[i]+j)
+
+大小
+sizeof(p) // 4
+因为本质上还是指针，所以大小都是4字节
+```
+## 指针数组
+定义：所谓指针数组是指若干个具有相同存储类型和数据类型的指针变量构成的集合。
+其本质是数组，里面存放的是指针
+```c
+定义格式：存储类型    数据类型    *数组名[元素个数]
+                      int        *arr[2]
+                      
+应用示例：
+    1) 用于存放普通变量的地址
+    int a = 10,b = 20, c = 30;
+    int *p[3] = {&a, &b, &c};
+    
+    访问b的值：
+    *p[1]    *(*(p+1))    **(p+1)  
+    
+    访问b的地址
+    printf("%p\n", p[1]);
+    printf("%p\n", *(p+1));
+    printf("%p\n", *p+1);
+
+     2）用于存放二维数组的每行第一个元素的地址(列地址)
+    int a[2][3] = {1,2,3,4,5,6};
+    int *p[2] = {a[0], a[1]};
+    
+    访问a[1][2]的地址：
+    printf("%p\n", p[1]+2);
+    printf("%p\n", *(p+1)+2);
+    
+    访问a[1][2]的值：
+    printf("%d\n", *(p[1]+2));
+    printf("%d\n", *(*(p+1)+2));
+    
+    
+    大小：
+    printf("%d\n", sizeof(p)); // 8
+    因为 p 中包含了两个指针
+    
+    
+    3）用于存放字符串
+    char *p[3] = {"hello", "world", "ikun"};
+    
+    打印 "world" 字符串
+    printf("%s\n", p[1]);
+    printf("%s\n", *(p+1));
+    
+    打印 "world" 中 "d" 这个字符
+    printf("%c\n", *(p[1]+4)); // d
+    printf("%c\n", *(*(p+1)+4)); // d
+    
+    4）命令行参数
+    int main(int argc, char const *argv[])0
+    
+    argc：表示 argv 指针数组里面存储数据的个数，即命令行传递字符串的个数
+    argv：就是一个指针数组，里面存放的是命令行传递的字符串
+    
+    int main(int argc, char const *argv[])
+{
+    printf("%s\n", argv[0]); // ./a.out
+    // printf("%s\n", argv[1]); // 123456
+    printf("%d\n", argc);  // 2
+    return 0;
+}
+// gcc argv.c
+// 我们说的命令行，就是 gcc 后即将要输入的内容
+// ./a.out 123456 执行
+//此时命令行参数有2个一个是./a.out 
+//一个是 123456
+//如果只输入一个命令行参数，但是在程序中访问了argv[1],或者超过
+//一个元素，此时数组越界，造成段错误
+```
+# 大小端问题
+*大小端也被称作字节序，面试得时候别人问得知道*
+**这是个非常重要的问题，例如给单片机的一组寄存器赋值，如果大小端和你设想的不一样，就会造成不该赋值的寄存器位被赋值**
+在计算机进行超过1字节数据进行存储的时候，会出现存储数据顺序不同的情况即大小端存储
+## 大小端定义
+- 小端：数据的低位存储在低地址，数据的高位存储在高地址，小端字序称为 LSB
+- 大端：数据的低位存储在高地址，数据的高位存储在低地址，大端字序称为 MSB
+## 大小端示例
+```c
+例：存储数据 0x12345678, 起始地址 0x4000
+
+    0x4000    0x4001    0x4002    0x4003
+小端：0x78       0x56    0x34        0x12
+大端：0x12         34      56          78
+
+小端：在低地址存放低字节数据，高地址存放高字节数据
+大端：在低地址存放高字节数据，高地址存放低字节数据
+```
+![](img/大小端示意图.png)
+## 如何判断开发环境的大小端
+![](img/判断大小端1.png)
+![](img/判断大小端2.png)
+# 函数
+定义：一个完成特定功能得代码模块
+**函数的三要素：** 功能 参数 返回值
+*格式：*
+存储类型      数据类型      函数名(参数列表)
+{
+    函数体
+}
+- 没有参数：参数列表可以省略，也可以用 void
+- 没有返回值：数据类型为 void，函数内部没有 return 语句
+- 有返回值：要根据返回值的数据类型定义函数的数据类型
+- 定义子函数时可以直接定义在主函数的上面，如果定义在主函数下面需要提前声明函数
+**函数声明**
+数据类型     函数名(参数列表)
+**函数调用**
+- 没有返回值：直接调用：函数名(填入实参)
+- 有返回值：如果需要接受返回值，就要定义一个与返回值类型相同的变量接收
+				如果不需要接收返回值，就直接调用函数
+```c
+void fun()
+{
+    printf("hello\n");
+}
+
+void num(int a, int b)
+{
+    printf("num=%d\n", a+b);
+}
+
+int num2(int a, int b)
+{
+    return a+b;
+}
+
+// 这样就声明了，就没有警告了
+int sub(int a, int b);
+
+int main(int argc, char const *argv[])
+{
+    fun();
+    num(1, 2);
+    int a = num2(3,4);
+    printf("%d\n", a);
+    int b = sub(5,6);
+    printf("%d\n", b);
+    return 0;
+}
+
+// 函数如果放在主函数的上面，那么这个函数还能调用
+// 函数如果放在主函数的下面，会报一个警告，告诉你这个函数没有声明
+// 需要再 mian 函数上边，给它声明一下
+int sub(int a, int b)
+{
+    return a+b;
+}
+```
+## 函数小练习
+练习1：编写一个函数，函数有两个参数，第一个是一个字符，第二个是一个 char *，返回字符串中该字符的个数。
+int fun(char ch, char *s)
+```c
+int fun(char c,char *p)
+{
+
+    //返回字符串中该字符的个数
+    char temp[128]={0};
+    strcpy(temp,p);
+    int times=0;
+    for(int i=0;i<=strlen(temp);i++)
+    {
+        if (temp[i]==c)
+        {
+            times++;
+        }
+        
+    }
+    return times;
+}
+int main()
+{
+    char test[]="sss2";
+    printf("%d\n",fun('s',test));
+}
+```
+练习2：编程实现 strlen 函数的功能，strlen 计算字符串实际长度，不包括 '\0'
+```c
+int my_strlen(const char *p)
+{
+    int len=0;
+    while (*p!='\0')
+    {
+        len++;
+        p++;
+    }
+    
+    return len;
+}
+int main()
+{
+    char test[]="sss2";
+    printf("%d\n",my_strlen(test));
+}
+```
+## 函数传参（重点）
+### 值传递
+**单项传递，将实参传递给形参使用，改变形参实参不会受影响**
+```c
+int num2(int a, int b)
+{
+    ++a;
+    ++b;
+    return a+b;
+}
+
+int main(int argc, char const *argv[])
+{    
+    int a = 3, b=4;
+    int c = num2(a,b);
+    printf("%d %d %d\n",a, b, c);    
+    return 0;
+}
+//执行之后，a b的值不会被真正改变
+```
+### 地址传递
+**双向传递，在函数中改变修改形参，实参会随之变化**
+```c
+int sum(int *a, int *b)
+{
+    *a = *a + *b;
+    *b = *b + 2;
+    return *a+*b;
+}
+int main(int argc, char const *argv[])
+{
+    int a = 3, b=4;
+    // 因为你是拿到了那块的空间，是对空间赋值，并不是拿到值
+    int ret = sum(&a, &b);
+    printf("%d %d %d\n",a, b, ret);
+    return 0;
+}
+```
+### 数组传递
+*个人觉得这种方式没有什么实际使用价值*
+
+__向函数中传入数组，编译器会自动让数组退化为指针__,在函数的参数列表中写为char *a[32]这么写仅仅是提醒用户这里需要输入一个数组的首地址，而不是其他普通字符或字符串的指针.
+传入普通数组时，没有什么值得注意的地方，**重点关注传入常量字符串的不同情况**
+**第一种情况**
+```c
+char *str(char a[32])
+{
+    a = "hello";
+    printf("%s\n", a);
+    return a;
+}
+int main(int argc, char const *argv[])
+{
+    char *ch = str("abc");
+    printf("%s\n", ch);
+    return 0;
+}
+```
+//上述代码执行后输出
+```sh
+hello
+hello
+```
+**前提知识**：在C语言中定义一个常量字符串，编译器会把它分成两部分，一部分是在栈区（如果是局部变量的话）的一个字符型指针，这个指针的大小有操作系统的位数决定。
+**这个指针所指向的内存空间是存储在常量区的字符串本身。在常量区的数据是不能被修改的**
+**分析**：尽管abc这个字符串是个存储在常量区，但是向函数传入数组的时候，会自动退化为指针。尽管在常量区的数据不能修改，但是指针的指向是可以修改的（*类似const修饰指针*）
+```c
+a="hello"
+```
+该语句其实就是让a这个指针由原来指向常量区abc变为指向hello，所以最终程序会输出hello而不是abc
+**但是要注意常量区的数据是绝对不能被修改的**
+```c
+char *str(char a[32])
+{
+    *a = "hello";
+    printf("%s\n", a);
+    return a;
+}
+int main(int argc, char const *argv[])
+{
+    char *ch = str("abc");
+    printf("%s\n", ch);
+    return 0;
+}//上述代码强行对常量区的内容进行修改
+//导致段错误
+```
+**此外还需要注意如下所示传入指针误操作造成野指针的问题**
+```c
+char *str(char a[32])
+{
+    char *p=a;
+    printf("%c\n", &p+1);
+    return a;
+}
+int main(int argc, char const *argv[])
+{
+    char *ch = str("abc");
+    printf("%s\n", ch);
+    return 0;
+}//上述代码强行对常量区的内容进行修改
+//导致段错误
+```
+```c
+char *str(char a[32])
+{
+    // *a = 's';
+    // char *p=a+1;
+    printf("%c\n", *(a+1));
+    printf("%p\n", (a+1));
+    printf("%p\n", a);
+    return a;
+}
+int main(int argc, char const *argv[])
+{
+    char *ch = str("abc");
+    printf("%s\n", ch);
+    return 0;
+}
+```
+### 字符数组和字符串的区别
+```c
+char *p = "hello";
+char buf[32] = "hello";
+```
+p是一个指针，这个指针指向的是在常量区的一块空间，空间内部存储hello，
+但是p本身并不是存储在常量区的。
+buf[32]是一个数组，这个数组不是开辟在常量区的，内容是可以随便修改的。
+
+## 函数和栈区
+栈用来存储函数内部 (包含main()函数) 的变量，它是一个 FILO（First in Last Out），先进后出的结构。当一个函数运行结束后，这个函数所有在栈中的变量都会被删除，并且它们的所占的空间将会被释放。不需要手动的申请和释放
+# 开辟堆区空间
+
+## 栈区和堆区的区别
+栈区：是由系统自动申请和释放，不需要我们手动申请
+堆区：需要我们随时申请，由我们自己去释放的，随用随取，用完释放
+## 如何开辟堆区空间
+```c
+// 开辟
+#include <stdlib.h>
+       void *malloc(size_t size);
+       
+功能：在堆区开辟空间
+参数：size：开辟空间的大小(单位字节)返回值：
+    成功：返回开辟空间的首地址
+    失败：NULL;
+    
+#include <stdlib.h>
+       void free(void *ptr);
+
+功能：释放堆区空间
+参数：ptr：堆区空间首地址
+返回值：无
+
+int *p = (int *)malloc(sizeof(int)*100);
+    if(p == NULL)
+    {
+        printf("lost\n");
+    }
+    else
+    {
+        printf("success\n");
+    }
+    free(p);
+    p = NULL;
+    printf("%p\n",p);
+    
+注意：
+1. 手动开辟堆区空间，要注意内存泄漏
+    当指针指向开辟堆区空间后，又对指针重新赋值，则没有指针指向开辟的堆区空间，就会造成内存泄漏
+2. 使用完堆区空间后及时释放空间
+```
+**内存泄漏示例**
+```c
+// 如下代码输出结果
+void fun(char *p)
+{
+    p = (char *)malloc(32);
+    strcpy(p, "hello");
+}
+int main()
+{
+    char *m = NULL;
+    fun(m);
+    printf("%s\n", m);
+}
+原因：函数执行完堆空间会被销毁，不会被保留函数内部开辟堆空间的地址，并不会保留 m 的指向，此时 m 指向空
+```
+**有两种方式可以避免这个问题**
+```c
+1. 通过返回值
+char *fun() // p = NULL
+{
+    char *p = (char *)malloc(32);
+    strcpy(p, "hello");
+    strcpy(p, "hello");
+    return p;
+}
+int main()
+{
+    char *m = fun();
+    printf("%s\n", m);
+    fun(m);
+    free(m);
+    m = NULL;
+    return 0;
+}
+2. 通过传参
+void fun(char **p)
+{
+    *p = (char *)malloc(32);
+    strcpy(*p, "hello");
+}
+
+int main(int argc, char const *argv[])
+{
+    char *m = NULL;
+    fun(&m);
+    printf("%s\n", m);
+    free(m);
+    m = NULL;
+    return 0;
+}
+```
+# string函数族
+```c
+1. strcpy
+#include <string.h>
+       char *strcpy(char *dest, const char *src);
+功能：实现字符串的复制，包括 \0
+参数：char *dest：目标字符串的首地址
+    const char *src：源字符串首地址
+返回值：目标字符串首地址
+
+char s[32] = "hello";
+    char str[32] = "world";
+    strcpy(s, str);
+    printf("%s\n", s);
+    // printf("%s\n", str);
+    for (size_t i = 0; i < 6; i++)
+    {
+        复制包括 \0
+        printf("%d\n", s[i]);
+    }
+    printf("\n");
+    
+char *strncpy(char *dest, const char *src, size_t n)
+功能：实现字符串复制
+参数：char *dest：目标字符串的首地址
+    const char *src：源字符串首地址
+    size_t n：字符的个数
+返回值：目标字符串的首地址
+char s[32] = "hello";
+char str[32] = "world";
+strncpy(s, str, 3);
+printf("%s\n", s);
+
+2. strlen
+#include <string.h>
+       size_t strlen(const char *s);
+功能：计算字符串实际长度
+参数：s：字符串的首地址
+返回值：实际长度
+
+3. strcat
+#include <string.h>
+       char *strcat(char *dest, const char *src);
+功能：用于字符串拼接
+参数：char *dest：目标字符串的首地址
+    const char *src：源字符串首地址
+返回值：目标字符串的首地址
+
+char s[32] = "hello";
+    char str[32] = "world";
+    strcat(s, str);
+    printf("%s\n", s);
+    printf("%s\n", str);
+    return 0;
+
+char *strncat(char *dest, const char *src, size_t n);
+拼接 str 的前n个 字符
+
+4. strcmp
+#include <string.h>
+       int strcmp(const char *s1, const char *s2);
+功能：用于字符串比较
+参数：s1 s2 用于比较字符串
+返回值：从字符串首个字符开始比较字符ASCII的大小，如果相等继续向后判断
+    1    s1 > s2
+    0    s1 == s2
+    -1   s1 < s2
+    
+    char s[32] = "hello";
+    char str[32] = "world";
+    char data[] = "ikun";
+    char *ss = "kunkun";
+    int ret = strcmp(s, str);
+    printf("%d\n", ret);
+
+int strncmp(const char *s1, const char *s2, size_t n);
+比较两个字符串前n个字符的大小
+```
+# 递归函数
+1. 定义：自己调用自己
+2. 执行过程分为两个阶段
+- 1）递推阶段：从原问题，按递推公式从未知到已知，最终达到递归终止条件
+- 2）回归阶段：按递归的终止条件求出结果，逆向逐步带入递归公式，回到原问题求解
+*示例代码*
+```c
+int fun(int n)
+{
+    if(n == 1)
+        printf("你好");
+    return n*fun(n-1);
+}
+
+int main(int argc, char const *argv[])
+{
+    printf("%d\n", fun(5)); //输出120
+    return 0;
+}
+```
+# 结构体（重点）
+1. 定义：用户自定义的数据类型，在结构体中可以包含若干不同数据类型的成员变量(也可以相同),使这些数据组合起来反应某一个信息。
+2. 格式：
+struct 结构体名
+{
+    数据类型    成员变量1;
+    数据类型    成员变量2;
+    数据类型    成员变量3;
+    ....
+}
+*定义结构体示例*
+```c
+struct dog
+{
+    char name[32];
+    int age;
+    char eat;
+}
+```
+## 如何定义结构体变量
+1）概念：通过结构体数据类型定义的变量
+2）格式    struct     结构体名    变量名
+### 先定义结构体，在定义结构体变量
+```c
+   struct 结构体名
+   {
+       成员变量;
+   };
+   struct 结构体名 变量名;
+   
+   #include<stdio.h>
+   struct student
+   {
+       int id;
+       int age;
+       float score;
+   } stu1; // 这个是全局的
+
+   int main(int argc, char const *argv[])
+   {
+       struct student stu;
+       return 0;
+   }  
+```
+### 定义结构体的同时，定义结构体变量
+```c
+  struct 结构体名
+  {
+      成员变量;
+  }变量名;
+  
+  #include<stdio.h>
+  struct student
+  {
+      int id;
+      int age;
+      float score;
+  } stu1; // 这个是全局的
+```
+### 缺省结构体名定义结构体变量
+这种用的比较少，毕竟不方便后续使用
+```c
+  struct
+  {
+      成员变量;
+  }变量名;
+```
+## 如何给结构体赋值
+
+### 定义变量时直接用大括号赋值
+```c
+    struct student
+    {
+        int id;
+        int age;
+        float score;
+        char name[32];
+    };
+    struct student stu = {1,21,60,"jinqi"};
+```
+### 定义变量时未初始化，然后对变量单独赋值
+```c
+    struct student
+    {
+        int id;
+        int age;
+        float score;
+        char name[32];
+    };
+    struct student stu;
+    stu.id = 2;
+    stu.age = 18;
+    stu.score = 80;
+    stu.name = "zhangsan";
+```
+### 点等法赋值
+```c
+    struct student
+    {
+        int id;
+        int age;
+        float score;
+        char name[32];
+    };
+    struct student stu = {
+        .id = 3,
+        .score = 70;
+        .age = 20;
+        .name = "lisi";
+    };
+```
+## 访问结构体
+通过 .访问：结构体变量名.成员变量名
+scanf("%d %d %f %s", &stu1.id, &stu1.age, &stu1.score, stu1.name);
+printf("%d %d %.1f %s\n", stu1.id, stu1.age, stu1.score, stu1.name);
+## 结构体重定义
+### 定义结构体的同时重定义
+```c
+    typedef struct student
+    {
+        int id;
+        int age;
+        float score;
+    }STU;
+    struct student stu;   ===  STU stu;
+```
+### 先定义结构体，然后重定义
+```c
+     struct student
+    {
+        int id;
+        int age;
+        float score;
+    };
+    typedef struct student STU;
+    STU stu;
+```
+例：
+```c
+    struct student
+    {
+        int id;
+        int age;
+        float score;
+    };
+    typedef struct student STU;
+
+    int main(int argc, char const *argv[])
+    {
+        STU stu = {1, 20, 60.5};
+        printf("%d %d %.1f\n", stu.id, stu.age, stu.score);
+        return 0;
+    }
+``` 
+# 结构体数组
+概念：本质上是数组，结构体类型相同的变量组成的数组
+## 如何定义
+### 定义结构体同时定义结构体数组
+```c
+struct student
+{
+    int id;
+    int age;
+    float score;
+}stu[5];
+```
+### 先定义结构体，然后定义结构体数组
+```c
+struct student
+{
+    int id;
+    int age;
+    float score;
+};
+struct student stu[5];
+```
+## 如何初始化
+### 定义结构体同时赋值
+```c
+struct student
+{
+    int id;
+    int age;
+    float score;
+}stu[5] = {
+    {1, 20, 56},
+    {2, 21, 56},
+    {3, 19, 56},
+    {4, 17, 56},
+    {5, 30, 56}
+};
+```
+### 点等法
+```c
+{
+    int id;
+    int age;
+    float score;
+}stu[3] = {
+    [0] = {
+        .id = 1,
+        .age = 20;
+        .score = 66;
+    },
+    [1] = {
+        .id = 2,
+        .age = 22;
+        .score = 66;
+    },
+    [2] = {
+        .id = 2,
+        .age = 23;
+        .score = 66;
+    }
+}
+```
+### 先定义结构体数组，在对数组中的每一个元素分别赋值
+```c
+struct student
+{
+    int id;
+    int age;
+    float score;
+}stu[5];
+stu[0].id = 1;
+stu[0].age = 20;
+stu[0].score = 99;
+```
+## 求解结构体数组大小
+- 结构体类型大小 * 元素个数
+- sizeof(结构体数组名)
+## 结构体数组输入输出
+**利用for循环**
+```c
+struct student
+{
+    int id;
+    int age;
+    float score;
+}stu[5];
+
+int main(int argc, char const *argv[])
+{
+    int i,j;
+    for ( i = 0; i < 5; i++)
+    {
+        scanf("%d %d %f", &stu[i].id,&stu[i].age,&stu[i].score);
+    }
+    for ( j = 0; j < 5; j++)
+    {
+        printf("%d %d %.2f\n", stu[j].id,stu[j].age,stu[j].score);
+    }
+    
+    return 0;
+}
+```
+# 结构体指针
+1.概念：指向结构体变量的指针
+2.定义格式：
+	struct 	结构体名	*结构体指针名
+**注意下面这个示例，不匹配也不行**
+```c
+struct student
+{
+    int id;
+    int age;
+    float score;
+} stu1, stu2;
+
+struct work
+{
+    int id;
+    int age;
+    float score;
+} w1;
 
 
+int main(int argc, char const *argv[])
+{
+    struct student *p = &stu1;
+    struct student *p1 = &w1; // 错误，结构体类型不同
+    
+    return 0;
+}
+```
+## 利用结构体指针给成员变量赋值
+__格式：指针变量名 -> 成员变量名 或者( *指针变量名).成员变量名__
+```c
+struct student *sp = &s1;
+    // sp -> id = 123;
+    // strcpy(sp -> name, "zhangsan");
+    (*sp).id = 123;
+    strcpy((*sp).name, "zhangsan");
+    printf("%d %s\n", sp -> id, sp -> name);
+    printf("%d %s\n", s1.id, s1.name);
+    printf("%d %s\n", (*sp).id, (*sp).name);
+    
+注：结构体指针的大小：4字节，因为本质还是指针。
 
+总结：
+1. 不能把结构体类型变量作为整体引用，只能对结构体类型变量中的各个成员变量分别引用
+2. 如果成员变量本身属于另一种结构体类型，用若干个成员运算符一级级找到最低级的成员变量
+
+例：
+struct work
+{
+    int ip;
+};
+struct student
+{
+    int id;
+    int age;
+    struct work w1;
+}stu1;
+stu1.w1.ip = 2;
+
+3. 可以把成员变量当成普通变量运算
+4. 在数组中，成员之间是不能彼此赋值，结构体变量可以相互赋值
+```
+## 计算结构体大小（重要）
+C语言结构体对齐步骤:
+- 结构体各成员对齐.
+- 结构体总体对齐
+![](img/结构体大小计算方法.png)
+```c
+struct student
+{
+    char b;
+    short c;
+    int a;
+}; // 8
+
+struct student
+{
+    char b;
+    short c;
+    double a;
+}; // 12
+struct student
+{
+    char a;
+    int b;
+    char c;
+    double d;
+}; // 20
+struct student
+{
+    char n;
+    short a;
+    char c;
+}; // 6 注意看这个例子
+```
