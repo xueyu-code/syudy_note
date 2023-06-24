@@ -669,6 +669,11 @@ sudo apt-cache depends 软件包名:获取该软件包的依赖信息
 sudo apt-cache rdepends 软件包名:获取所有依赖于该软件包的软件包
 ```
 # shell
+**shell这部分内容深入研究需要花费不少时间，比如结合正则表达式的应用，以及sed等高级用法，所以此处笔记我也只是记录了比较常见的一些知识点**
+-------------------------------分割线----------------------------------
+**仓库中的shell笔记的其他补充知识参考了Archlink的Wiki,正则表达式部分暂时没深入学习，正则表达式的资料可以参考下面这个链接，shell的深入知识请参考《Linux命令行与shell脚本编程大全》**
+https://github.com/ziishaned/learn-regex/blob/master/translations/README-cn.md
+
 ## shell基础
 shell是贝壳的意思，起到保护作用。那么Linux的shell可以保护内核。
 shell: 命令行解释器
@@ -1509,6 +1514,69 @@ do
     done
 done
 ```
+## shell字符集问题
+**shell的字符集设置是可以影响程序的运行的，例如下面的代码**
+```bash
+#!/bin/bash
+read a
+case $a in
+[A-Z])
+echo "daxie"
+    ;;
+[a-z])
+echo "xiaoxie"
+;;
+
+*)
+    echo "over"
+    ;;
+esac
+```
+上述代码在不同的字符集下面所能实现的效果完全不同。
+**分析**
+将LANG设置成en_US.UTF-8类似的本地语言环境时，
+系统是按字典顺序来进行比较和排序的，
+而POSIX和C locale是按照ASCII码大小排序的。
+**解决方法**
+首先来看几位网友的答复
+```bash
+网友1
+不要使用 [a-z] 这种表示法, 因为在 zh_CN* locale 下, 这表示这样的范围:
+a A b B ........ x X y Y z
+
+使用 [A-Z] 则表示:
+A b B C c ......... x X y Y z Z
+
+若要避免该问题，一般可以把 locale 改成 en_US* 或者是 C, 如:
+export LANG=C
+
+或者是改 LC_COLLATE 指定字元字串排序時使用 en_US* 或是 C 这种 locale 即可, 如:
+export LC_COLLATE=C
+
+建议使用POSIX的方式:
+[[:lower:]]
+[[:upper:]]
+```
+*可以利用set命令查看环境变量，查看当前终端的字符集设置*
+所以最简单粗暴的方式就是写成下面这种形式
+```bash
+#!/bin/bash
+export LANG=C
+read a
+case $a in
+[A-Z])
+echo "daxie"
+    ;;
+[a-z])
+echo "xiaoxie"
+;;
+
+*)
+    echo "over"
+    ;;
+esac
+```
+**注意**假如你不在代码中添加修改字符集的命令，只是在当前终端中手动输入修改字符集的命令，那么虽然手动输入之后在当前终端下的设置已经被修改，但是新打开的终端字符集设置还是原来的。
 ## 数组
 ### 数组的赋值
 有下面几种输入形式
