@@ -1635,10 +1635,97 @@ echo ${arr2[@]}
 arr2[2]=200
 echo ${arr2[@]}
 ```
+# 条件编译
+## 应用场景
+按照条件是否满足来决定代码是否编译，是预处理指令。
+就是后面的条件语句如果执行结果为真，则后面的代码块会被编译，否则就不会被编译。
+## 根据宏是否定义
+```c
+#define 宏名
+#ifdef 宏名
+	/*code1*/
+#else
+	/*code2*/
+#endif
+执行顺序：如果宏定义了则编译code1,否则编译code2
 
+#include <stdio.h>
+//#define DEF
+int main(int argc, char const *argv[])
+{
+#ifdef DEF        //如果有DEF宏定义下面代码则编译，否则编译else后代码
+    printf("yes\n");
+#else
+    printf("no\n");
+#endif
+    return 0;
+}
+```
+## 根据宏值
+```c
+#define 宏名 值
+#if 宏名
+	/*code1*/
+#else
+	/*code2*/
+#endif
+执行顺序：宏的值为非0(真)则编译code1，否则编译code2。
 
-
-
+#include <stdio.h>
+#define DEF 0
+int main(int argc, char const *argv[])
+{
+#if DEF
+    printf("yes\n");
+#else
+    printf("no\n");
+#endif
+    return 0;
+}
+```
+## gcc向宏传递参数来选择编译模式
+首先需要知道的是在linux中Shell和C程序之间是可以互相传递数据的
+具体用法可以百度一下，此处没有深入研究。
+```c
+#include <stdio.h>
+int main()
+{
+    #if test 
+    printf("yes\n");
+    #else
+        printf("NO\n");
+    #endif
+}
+```
+**根据编译指令来选择模式**
+```sh
+gcc -Dtest=1  test.c -o test
+```
+![](img/gcc控制编译宏模式.png)
+**千万不要写成下面这样**
+```c
+#include <stdio.h>
+#define test 0
+int main()
+{
+    #if test 
+    printf("yes\n");
+    #else
+        printf("NO\n");
+    #endif
+}
+```
+## 防止头文件重复包含
+**此处用法一般都是放在头文件中针对头文件使用**
+```c
+#ifndef 宏名
+#define 宏名
+	/*code*/
+#endif
+```
+**分析**
+如果第一次引用head.h就会定义__HEAD_H__这个宏，
+下一次引用head.h时这个#ifndef的条件就不满足了，不会编译头文件里面内容。
 
 
 
